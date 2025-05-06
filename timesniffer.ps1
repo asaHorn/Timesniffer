@@ -1,22 +1,3 @@
-<#
-.SYNOPSIS
-  Compare MFT (FN) vs SI timestamps from a CSV for files in a given directory.
-
-.DESCRIPTION
-  Streams a large MFT CSV into a hashtable for fast lookup, then scans
-  the specified directory, warning on any file whose MFT (FN) timestamp
-  exceeds its SI timestamp.
-
-.PARAMETER CsvPath
-  Path to the pipe-delimited MFT CSV export.
-
-.PARAMETER TargetDir
-  Root directory to scan for files to compare.
-
-.EXAMPLE
-  .\Compare-MftTimestamps.ps1 -CsvPath C:\mft.csv -TargetDir C:\Data
-#>
-
 param(
     [Parameter(Mandatory=$true)][string]$TargetDir
 )
@@ -55,8 +36,13 @@ if ($CsvAgeMinutes.TotalMinutes -gt 30) {
         "/Separator:," `
 		"/TSPrecision:NanoSec"
 
-    # Reset $CsvPath to the newly generated file
-    $CsvPath = Join-Path -Path $outDir -ChildPath 'mft.csv'
+    # locate the newly created folder
+    $latest = Get-ChildItem $workingDir -Directory `
+              | Where-Object Name -Like 'Mft2Csv_*' `
+              | Sort-Object Name `
+              | Select-Object -Last 1
+
+    $CsvPath = Join-Path $latest.FullName 'mft.csv'
 }
 
 Write-Host "Loading MFT CSV from $CsvPath... This will take a while"
